@@ -606,7 +606,12 @@ with st.sidebar:
         st.caption("Logo not found: static/LAABio.png")
 
     st.info("by Ricardo Moreira Borges (IPPN-UFRJ; 06-2026)")
-    st.divider()
+    
+    st.link_button(
+        "📖 Documentation / Tutorial",
+        "https://github.com/RicardoMBorges/app_seqAAsearch/blob/main/README.md",
+        use_container_width=True,
+    )
 
     st.header("Input")
     uploaded_file = st.file_uploader(

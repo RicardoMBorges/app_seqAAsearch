@@ -400,8 +400,18 @@ def matrix_to_long_table(sim_matrix, labels, metric_name):
 # =============================================================================
 # Sidebar
 # =============================================================================
-
+from pathlib import Path
 with st.sidebar:
+
+
+    LOGO_PATH = Path(__file__).parent / "static" / "LAABio.png"
+
+    if LOGO_PATH.exists():
+        st.image(str(LOGO_PATH), use_container_width=True)
+
+    st.info("by Ricardo Moreira Borges (IPPN-UFRJ; 06-2026)")
+    st.divider()
+
     st.header("Input")
     uploaded_file = st.file_uploader(
         "Upload database file",
@@ -556,7 +566,7 @@ show_cols = [
 ]
 st.dataframe(peptides[show_cols].head(500), use_container_width=True)
 
-csv_processed = peptides.drop(columns=["mol"], errors="ignore").to_csv(sep=";",index=False).encode("utf-8")
+csv_processed = peptides.drop(columns=["mol"], errors="ignore").to_csv(index=False).encode("utf-8")
 st.download_button(
     "Download peptide-like table with simplified sequences",
     data=csv_processed,
@@ -598,7 +608,7 @@ with st.expander("Top sequence-like similarities"):
     st.dataframe(seq_pairs.head(200), use_container_width=True)
     st.download_button(
         "Download sequence similarity pairs",
-        data=seq_pairs.to_csv(sep=";",index=False).encode("utf-8"),
+        data=seq_pairs.to_csv(index=False).encode("utf-8"),
         file_name="sequence_similarity_pairs.csv",
         mime="text/csv"
     )
@@ -622,7 +632,7 @@ with st.expander("Top structural similarities"):
     st.dataframe(struct_pairs.head(200), use_container_width=True)
     st.download_button(
         "Download Morgan/Tanimoto similarity pairs",
-        data=struct_pairs.to_csv(sep=";",index=False).encode("utf-8"),
+        data=struct_pairs.to_csv(index=False).encode("utf-8"),
         file_name="morgan_tanimoto_similarity_pairs.csv",
         mime="text/csv"
     )
@@ -646,7 +656,7 @@ if not comparison.empty:
 
     st.download_button(
         "Download sequence vs structure comparison",
-        data=comparison.to_csv(sep=";",index=False).encode("utf-8"),
+        data=comparison.to_csv(index=False).encode("utf-8"),
         file_name="sequence_vs_structure_similarity.csv",
         mime="text/csv"
     )

@@ -181,6 +181,7 @@ SPECIAL_MOTIFS = {
 # from the Bertin workflow. These are intentionally "signature-like": they test
 # whether the molecule contains the required residue/motif substructures, not
 # whether the exact MS/MS ion will be formed.
+
 MICROPEPTIN_SIGNATURES = {
     "Ahp-Phe-NMePhe_core_like": {
         "required": {"motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1},
@@ -197,50 +198,176 @@ MICROPEPTIN_SIGNATURES = {
         "any_of": {"BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
         "diagnostic_msms": "BTA-Gln-Thr-related ions, e.g. m/z 282",
         "interpretation": "Putative butyric acid starter plus Gln-Thr."
-    },
-    "BTA-Gln-Thr-Val-NMePhe_like": {
-        "required": {"res_Gln": 1, "res_Thr": 1, "res_Val": 1, "res_Phe": 1, "motif_NMe_amide": 1},
-        "any_of": {"BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
-        "diagnostic_msms": "[BTA-Gln-Thr-Val-N-MePhe+H]+",
-        "interpretation": "Side-chain/starter fragment reported for micropeptins."
-    },
-    "Met-Ahp-Phe-NMePhe_like": {
-        "required": {"res_Met": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1},
-        "diagnostic_msms": "[Met-Ahp-Phe-NMePhe+H-H2O]+",
-        "interpretation": "Met-containing Ahp-Phe-NMePhe fragment."
-    },
-    "Met-Ahp-Phe_like": {
-        "required": {"res_Met": 1, "motif_Ahp_like": 1, "res_Phe": 1},
-        "diagnostic_msms": "[Met-Ahp-Phe+H-H2O]+",
-        "interpretation": "Met-Ahp-Phe fragment."
-    },
-    "BTA-Gln-Thr-Met-Ahp-Phe-NMePhe-Val_like": {
-        "required": {"res_Gln": 1, "res_Thr": 1, "res_Met": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1, "res_Val": 1},
-        "any_of": {"BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
-        "diagnostic_msms": "BTA-Gln-Thr-Met-Ahp-Phe-NMePhe-Val",
-        "interpretation": "Micropeptin 950-like sequence signature."
-    },
-    "BTA-Gln-Thr-Trp-Ahp-Phe-NMePhe-Val_like": {
-        "required": {"res_Gln": 1, "res_Thr": 1, "res_Trp": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1, "res_Val": 1},
-        "any_of": {"BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
-        "diagnostic_msms": "BTA-Gln-Thr-Trp-Ahp-Phe-NMePhe-Val",
-        "interpretation": "Micropeptin 1005-like sequence signature."
-    },
-    "BTA-Gln-Thr-Hphe-Ahp-Phe-NMePhe-Val_like": {
-        "required": {"res_Gln": 1, "res_Thr": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1, "res_Val": 1},
-        "any_of": {"Hphe_like": ["N[C@H](CCC1=CC=CC=C1)C(=O)", "N[C@H](CCCc1ccccc1)C(=O)"],
-                   "BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
-        "diagnostic_msms": "BTA-Gln-Thr-Hphe-Ahp-Phe-NMePhe-Val",
-        "interpretation": "Homologated phenylalanine-containing micropeptin-like signature."
-    },
-    "BTA-Gln-Thr-Hleu_or_Hile-Ahp-Phe-NMePhe-Val_like": {
-        "required": {"res_Gln": 1, "res_Thr": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1, "res_Val": 1},
-        "any_of": {"Hleu_or_Hile_like": ["N[C@H](CCC(C)C)C(=O)", "N[C@H](CC(C)CC)C(=O)"],
-                   "BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
-        "diagnostic_msms": "BTA-Gln-Thr-Hleu/Hile-Ahp-Phe-NMePhe-Val",
-        "interpretation": "Homologated Leu/Ile micropeptin-like signature; Leu/Ile cannot be confidently separated by this heuristic."
-    },
+    }
 }
+
+# =============================================================================
+# MICROCYSTINS / NODULARINS
+# =============================================================================
+
+MICROCYSTIN_SIGNATURES = {
+
+    "Adda_core_like": {
+        "required": {
+            "motif_Adda_like": 1
+        },
+        "diagnostic_msms": "Adda-containing cyanobacterial peptide",
+        "interpretation": "Contains Adda-like substructure."
+    },
+
+    "Adda_Glu_like": {
+        "required": {
+            "motif_Adda_like": 1,
+            "res_Glu": 1
+        },
+        "diagnostic_msms": "Adda + Glu",
+        "interpretation": "Microcystin/nodularin-like core."
+    },
+
+    "Microcystin_like": {
+        "required": {
+            "motif_Adda_like": 1,
+            "res_Glu": 1,
+            "amide_bond_count": 4
+        },
+        "diagnostic_msms": "General microcystin-like scaffold",
+        "interpretation": "Strong indication of microcystin-type peptide."
+    },
+
+    "Nodularin_like": {
+        "required": {
+            "motif_Adda_like": 1,
+            "res_Glu": 1
+        },
+        "diagnostic_msms": "General nodularin-like scaffold",
+        "interpretation": "Possible nodularin-like peptide."
+    }
+}
+# =============================================================================
+# AERUGINOSINS
+# =============================================================================
+
+AERUGINOSIN_SIGNATURES = {
+
+    "Choi_core_like": {
+        "required": {
+            "motif_Choi_like": 1
+        },
+        "diagnostic_msms": "Choi-containing fragment",
+        "interpretation": "Contains Choi residue."
+    },
+
+    "Choi_Arg_like": {
+        "required": {
+            "motif_Choi_like": 1,
+            "res_Arg": 1
+        },
+        "diagnostic_msms": "Choi + Arg",
+        "interpretation": "Aeruginosin-like scaffold."
+    },
+
+    "Aeruginosin_like": {
+        "required": {
+            "motif_Choi_like": 1,
+            "res_Arg": 1,
+            "amide_bond_count": 2
+        },
+        "diagnostic_msms": "Typical aeruginosin motif",
+        "interpretation": "Strong aeruginosin candidate."
+    }
+}
+
+# =============================================================================
+# ANABAENOPEPTINS
+# =============================================================================
+
+ANABAENOPEPTIN_SIGNATURES = {
+
+    "Lys_core_like": {
+        "required": {
+            "res_Lys": 1
+        },
+        "diagnostic_msms": "Lys-containing cyclic peptide",
+        "interpretation": "Contains Lys residue."
+    },
+
+    "Lys_Arg_like": {
+        "required": {
+            "res_Lys": 1,
+            "res_Arg": 1
+        },
+        "diagnostic_msms": "Lys + Arg",
+        "interpretation": "Anabaenopeptin-like composition."
+    },
+
+    "Anabaenopeptin_like": {
+        "required": {
+            "res_Lys": 1,
+            "amide_bond_count": 4
+        },
+        "diagnostic_msms": "General anabaenopeptin scaffold",
+        "interpretation": "Possible anabaenopeptin."
+    }
+}
+
+# =============================================================================
+# MICROGININS
+# =============================================================================
+
+MICROGININ_SIGNATURES = {
+
+    "Tyr_Phe_rich_like": {
+        "required": {
+            "res_Tyr": 1,
+            "res_Phe": 1
+        },
+        "diagnostic_msms": "Aromatic-rich microginin-like peptide",
+        "interpretation": "Contains Tyr/Phe-rich motif."
+    },
+
+    "Microginin_like": {
+        "required": {
+            "res_Tyr": 1,
+            "amide_bond_count": 2
+        },
+        "diagnostic_msms": "General microginin-like scaffold",
+        "interpretation": "Possible microginin."
+    }
+}
+
+# =============================================================================
+# MICROVIRIDINS
+# =============================================================================
+
+MICROVIRIDIN_SIGNATURES = {
+
+    "Highly_amidated_macrocycle_like": {
+        "required": {
+            "amide_bond_count": 6
+        },
+        "diagnostic_msms": "Highly amidated peptide",
+        "interpretation": "Possible macrocyclic RiPP."
+    },
+
+    "Microviridin_like": {
+        "required": {
+            "amide_bond_count": 8
+        },
+        "diagnostic_msms": "Microviridin-like architecture",
+        "interpretation": "Strong microviridin candidate."
+    }
+}
+
+CYANOPEPTIDE_SIGNATURE_GROUPS = {
+    "Micropeptin / Cyanopeptolin": MICROPEPTIN_SIGNATURES,
+    "Microcystin / Nodularin": MICROCYSTIN_SIGNATURES,
+    "Aeruginosin": AERUGINOSIN_SIGNATURES,
+    "Anabaenopeptin / Ferintoic acid": ANABAENOPEPTIN_SIGNATURES,
+    "Microginin": MICROGININ_SIGNATURES,
+    "Microviridin": MICROVIRIDIN_SIGNATURES,
+}
+
+
 
 @st.cache_data
 def compile_smarts_dict(smarts_dict):
@@ -309,21 +436,6 @@ def detect_micropeptin_signatures(row, signatures):
             hits.append(signature_name)
 
     return hits
-
-
-def micropeptin_signature_table(row, signatures):
-    hits = set(row.get("micropeptin_signature_hits_list", []))
-    data = {}
-    for signature_name in signatures:
-        data[f"sig_{signature_name}"] = int(signature_name in hits)
-    return pd.Series(data)
-
-
-def build_signature_summary(row):
-    hits = row.get("micropeptin_signature_hits_list", [])
-    if not hits:
-        return ""
-    return "; ".join(hits)
 
 
 def collect_highlight_atoms_and_bonds(mol, compiled_patterns, selected_pattern_names):
@@ -719,16 +831,46 @@ for name, patt in residue_patterns.items():
 for name, patt in motif_patterns.items():
     processed[f"motif_{name}"] = processed["mol"].apply(lambda m, p=patt: len(m.GetSubstructMatches(p)) if m is not None else 0)
 
-processed["micropeptin_signature_hits_list"] = processed.apply(
-    lambda row: detect_micropeptin_signatures(row, MICROPEPTIN_SIGNATURES),
+ALL_CYANOPEPTIDE_SIGNATURES = {
+    signature_name: {**spec, "group": group_name}
+    for group_name, group_dict in CYANOPEPTIDE_SIGNATURE_GROUPS.items()
+    for signature_name, spec in group_dict.items()
+}
+
+processed["cyanopeptide_signature_hits_list"] = processed.apply(
+    lambda row: detect_micropeptin_signatures(row, ALL_CYANOPEPTIDE_SIGNATURES),
     axis=1
 )
-processed["micropeptin_signature_hits"] = processed.apply(build_signature_summary, axis=1)
+
+processed["cyanopeptide_signature_hits"] = processed["cyanopeptide_signature_hits_list"].apply(
+    lambda hits: "; ".join(hits) if hits else ""
+)
+
+def build_signature_summary_from_list(hits):
+    if not hits:
+        return ""
+    return "; ".join(hits)
+
+
+def cyanopeptide_signature_table(row, signatures):
+    hits = set(row.get("cyanopeptide_signature_hits_list", []))
+    data = {}
+    for signature_name in signatures:
+        data[f"sig_{signature_name}"] = int(signature_name in hits)
+    return pd.Series(data)
+
+
+processed["cyanopeptide_signature_hits"] = processed[
+    "cyanopeptide_signature_hits_list"
+].apply(build_signature_summary_from_list)
+
 signature_hit_table = processed.apply(
-    lambda row: micropeptin_signature_table(row, MICROPEPTIN_SIGNATURES),
+    lambda row: cyanopeptide_signature_table(row, ALL_CYANOPEPTIDE_SIGNATURES),
     axis=1
 )
+
 processed = pd.concat([processed, signature_hit_table], axis=1)
+
 
 residue_cols = [c for c in processed.columns if c.startswith("res_")]
 motif_cols = [c for c in processed.columns if c.startswith("motif_")]
@@ -758,7 +900,7 @@ processed["simplified_sequence"] = processed.apply(
 processed["AA_signature"] = processed.apply(
     lambda row: (
         row["simplified_sequence"]
-        + (" | Micropeptin_signatures: " + row["micropeptin_signature_hits"] if row["micropeptin_signature_hits"] else "")
+        + (" | Micropeptin_signatures: " + row["cyanopeptide_signature_hits"] if row["cyanopeptide_signature_hits"] else "")
     ).strip(),
     axis=1
 )
@@ -782,7 +924,7 @@ if len(family_counts):
 
 show_cols = [
     "compound_name", "family", "amide_bond_count", "detected_residue_count",
-    "detected_special_motif_count", "micropeptin_signature_hits", "MolWt", "AA_signature", "SMILES"
+    "detected_special_motif_count", "cyanopeptide_signature_hits", "MolWt", "AA_signature", "SMILES"
 ]
 st.dataframe(peptides[show_cols].head(500), use_container_width=True)
 
@@ -794,24 +936,24 @@ st.download_button(
     mime="text/csv"
 )
 
-st.subheader("2b. Micropeptin/cyanopeptolin substructure detection")
+st.subheader("2b. Cyanopeptide structural signature detection")
 st.caption(
     "These signatures are structural proxies inspired by diagnostic MS/MS fragments. "
     "They use SMILES/RDKit substructure matching, not direct MS/MS ion detection."
 )
 
 signature_summary_cols = [
-    "compound_name", "family", "micropeptin_signature_hits", "AA_signature", "SMILES"
+    "compound_name", "family", "cyanopeptide_signature_hits", "AA_signature", "SMILES"
 ] + signature_cols
 
 micro_hits_df = peptides.loc[
-    peptides["micropeptin_signature_hits"].astype(str).str.len() > 0,
+    peptides["cyanopeptide_signature_hits"].astype(str).str.len() > 0,
     signature_summary_cols
 ].copy()
 
 col_sig1, col_sig2 = st.columns(2)
-col_sig1.metric("Compounds with micropeptin-like signatures", len(micro_hits_df))
-col_sig2.metric("Signature types searched", len(MICROPEPTIN_SIGNATURES))
+col_sig1.metric("Compounds with cyanopeptide signatures", len(micro_hits_df))
+col_sig2.metric("Signature types searched", len(ALL_CYANOPEPTIDE_SIGNATURES))
 
 if len(micro_hits_df):
     st.dataframe(micro_hits_df, use_container_width=True)
@@ -834,7 +976,7 @@ with st.expander("Signature dictionary used for detection"):
             "diagnostic_msms_reference": spec.get("diagnostic_msms", ""),
             "interpretation": spec.get("interpretation", "")
         }
-        for name, spec in MICROPEPTIN_SIGNATURES.items()
+        for name, spec in ALL_CYANOPEPTIDE_SIGNATURES.items()
     ])
     st.dataframe(signature_dictionary_df, use_container_width=True)
     st.download_button(
@@ -886,7 +1028,7 @@ if len(peptides):
         st.markdown("**Detected AA/signature**")
         st.write(selected_row.get("AA_signature", ""))
         st.markdown("**Micropeptin signatures**")
-        st.write(selected_row.get("micropeptin_signature_hits", "None"))
+        st.write(selected_row.get("cyanopeptide_signature_hits", "None"))
         st.download_button(
             "Download highlighted structure PNG",
             data=png_bytes if png_bytes is not None else b"",
@@ -902,6 +1044,198 @@ if peptides.empty:
 # Limit for clustering plots
 plot_df = peptides.head(max_items).copy()
 labels = plot_df["compound_name"].astype(str).tolist()
+
+######## 
+st.subheader("2d. Sequence Explorer")
+st.caption(
+    "Explore compounds using residues, motifs, micropeptin signatures, "
+    "diagnostic MS/MS-inspired fragments or compound families already detected by the app."
+)
+
+search_mode = st.radio(
+    "Search mode",
+    [
+        "Residues / motifs",
+        "Cyanopeptide signature",
+        "Diagnostic MS/MS fragment",
+        "Family"
+    ],
+    horizontal=True
+)
+
+result_cols = [
+    "compound_name",
+    "family",
+    "AA_signature",
+    "cyanopeptide_signature_hits",
+    "SMILES"
+]
+
+hits = pd.DataFrame()
+
+# ==========================================================
+# RESIDUE / MOTIF SEARCH
+# ==========================================================
+
+if search_mode == "Residues / motifs":
+
+    available_residues = sorted([
+        col.replace("res_", "")
+        for col in residue_cols
+        if peptides[col].sum() > 0
+    ])
+
+    available_motifs = sorted([
+        col.replace("motif_", "")
+        for col in motif_cols
+        if peptides[col].sum() > 0
+    ])
+
+    col_a, col_b = st.columns(2)
+
+    with col_a:
+        selected_residues = st.multiselect(
+            "Select residues",
+            available_residues,
+            default=[]
+        )
+
+    with col_b:
+        selected_motifs = st.multiselect(
+            "Select motifs",
+            available_motifs,
+            default=[]
+        )
+
+    if selected_residues or selected_motifs:
+
+        mask = pd.Series(True, index=peptides.index)
+
+        for residue in selected_residues:
+            mask &= peptides[f"res_{residue}"] > 0
+
+        for motif in selected_motifs:
+            mask &= peptides[f"motif_{motif}"] > 0
+
+        hits = peptides.loc[mask, result_cols].copy()
+
+# ==========================================================
+# MICROPEPTIN SIGNATURE SEARCH
+# ==========================================================
+
+elif search_mode == "Cyanopeptide signature":
+
+    selected_group = st.selectbox(
+        "Select cyanopeptide class",
+        list(CYANOPEPTIDE_SIGNATURE_GROUPS.keys())
+    )
+
+    group_signatures = sorted(CYANOPEPTIDE_SIGNATURE_GROUPS[selected_group].keys())
+
+    available_signatures = [
+        sig for sig in group_signatures
+        if f"sig_{sig}" in peptides.columns and peptides[f"sig_{sig}"].sum() > 0
+    ]
+
+    selected_signatures = st.multiselect(
+        "Select signatures",
+        available_signatures,
+        default=[]
+    )
+
+    if selected_signatures:
+
+        mask = pd.Series(True, index=peptides.index)
+
+        for signature in selected_signatures:
+            mask &= peptides[f"sig_{signature}"] > 0
+
+        hits = peptides.loc[mask, result_cols].copy()
+
+# ==========================================================
+# DIAGNOSTIC FRAGMENT SEARCH
+# ==========================================================
+
+elif search_mode == "Diagnostic MS/MS fragment":
+
+    DIAGNOSTIC_MAP = {
+        "m/z 404 — Ahp-Phe-NMePhe core": "Ahp-Phe-NMePhe_core_like",
+        "m/z 243 — Ahp-Phe core": "Ahp-Phe_core_like",
+        "m/z 282 — BTA-Gln-Thr-like": "BTA-Gln-Thr_like",
+        "m/z 209/370 — Leu/Ile-containing micropeptin-like": "BTA-Gln-Thr-Hleu_or_Hile-Ahp-Phe-NMePhe-Val_like"
+    }
+
+    selected_fragments = st.multiselect(
+        "Select diagnostic MS/MS-inspired fragments",
+        list(DIAGNOSTIC_MAP.keys()),
+        default=[]
+    )
+
+    if selected_fragments:
+
+        mask = pd.Series(True, index=peptides.index)
+
+        for fragment in selected_fragments:
+            signature = DIAGNOSTIC_MAP[fragment]
+            col = f"sig_{signature}"
+
+            if col in peptides.columns:
+                mask &= peptides[col] > 0
+            else:
+                mask &= False
+
+        hits = peptides.loc[mask, result_cols].copy()
+
+# ==========================================================
+# FAMILY SEARCH
+# ==========================================================
+
+elif search_mode == "Family":
+
+    available_families = sorted(
+        peptides["family"]
+        .dropna()
+        .astype(str)
+        .unique()
+        .tolist()
+    )
+
+    selected_families = st.multiselect(
+        "Select families",
+        available_families,
+        default=[]
+    )
+
+    if selected_families:
+
+        hits = peptides.loc[
+            peptides["family"].isin(selected_families),
+            result_cols
+        ].copy()
+
+# ==========================================================
+# RESULTS
+# ==========================================================
+
+st.metric("Matching compounds", len(hits))
+
+if len(hits):
+
+    st.dataframe(
+        hits,
+        use_container_width=True
+    )
+
+    st.download_button(
+        "Download search results",
+        data=csv_bytes(hits),
+        file_name="sequence_explorer_results.csv",
+        mime="text/csv"
+    )
+
+else:
+    st.info("Select one or more options above to explore matching compounds.")
+
 
 st.subheader("3. Sequence-like clustering")
 st.caption(

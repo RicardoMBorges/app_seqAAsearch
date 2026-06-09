@@ -6,6 +6,7 @@ import io
 import re
 import itertools
 from collections import Counter
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,8 @@ from scipy.spatial.distance import squareform
 try:
     from rdkit import Chem, DataStructs
     from rdkit.Chem import AllChem, Descriptors
+    from rdkit.Chem.Draw import rdMolDraw2D
+    from rdkit.Chem import rdDepictor
     RDKIT_AVAILABLE = True
 except Exception:
     RDKIT_AVAILABLE = False
@@ -91,6 +94,13 @@ def normalize_columns(df):
 
     df = df.rename(columns=rename_map)
     return df
+
+
+def csv_bytes(df):
+    """Return semicolon-separated CSV bytes for Brazilian/European Excel compatibility."""
+    return df.to_csv(sep=";", index=False, encoding="utf-8-sig").encode("utf-8-sig")
+
+
 
 
 def safe_mol_from_smiles(smiles):
@@ -167,6 +177,71 @@ SPECIAL_MOTIFS = {
     "Sugar_like": "O[C@H]1O[C@H](CO)[C@H](O)[C@@H](O)[C@H]1O",
 }
 
+# Micropeptin/cyanopeptolin signatures inspired by diagnostic MS/MS fragments
+# from the Bertin workflow. These are intentionally "signature-like": they test
+# whether the molecule contains the required residue/motif substructures, not
+# whether the exact MS/MS ion will be formed.
+MICROPEPTIN_SIGNATURES = {
+    "Ahp-Phe-NMePhe_core_like": {
+        "required": {"motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1},
+        "diagnostic_msms": "[Ahp-Phe-N-MePhe+H-H2O]+, m/z 404",
+        "interpretation": "Core fragment typical of Phe-containing micropeptins/cyanopeptolins."
+    },
+    "Ahp-Phe_core_like": {
+        "required": {"motif_Ahp_like": 1, "res_Phe": 1},
+        "diagnostic_msms": "[Ahp-Phe+H-H2O]+, m/z 243",
+        "interpretation": "Ahp-Phe fragment."
+    },
+    "BTA-Gln-Thr_like": {
+        "required": {"res_Gln": 1, "res_Thr": 1},
+        "any_of": {"BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
+        "diagnostic_msms": "BTA-Gln-Thr-related ions, e.g. m/z 282",
+        "interpretation": "Putative butyric acid starter plus Gln-Thr."
+    },
+    "BTA-Gln-Thr-Val-NMePhe_like": {
+        "required": {"res_Gln": 1, "res_Thr": 1, "res_Val": 1, "res_Phe": 1, "motif_NMe_amide": 1},
+        "any_of": {"BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
+        "diagnostic_msms": "[BTA-Gln-Thr-Val-N-MePhe+H]+",
+        "interpretation": "Side-chain/starter fragment reported for micropeptins."
+    },
+    "Met-Ahp-Phe-NMePhe_like": {
+        "required": {"res_Met": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1},
+        "diagnostic_msms": "[Met-Ahp-Phe-NMePhe+H-H2O]+",
+        "interpretation": "Met-containing Ahp-Phe-NMePhe fragment."
+    },
+    "Met-Ahp-Phe_like": {
+        "required": {"res_Met": 1, "motif_Ahp_like": 1, "res_Phe": 1},
+        "diagnostic_msms": "[Met-Ahp-Phe+H-H2O]+",
+        "interpretation": "Met-Ahp-Phe fragment."
+    },
+    "BTA-Gln-Thr-Met-Ahp-Phe-NMePhe-Val_like": {
+        "required": {"res_Gln": 1, "res_Thr": 1, "res_Met": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1, "res_Val": 1},
+        "any_of": {"BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
+        "diagnostic_msms": "BTA-Gln-Thr-Met-Ahp-Phe-NMePhe-Val",
+        "interpretation": "Micropeptin 950-like sequence signature."
+    },
+    "BTA-Gln-Thr-Trp-Ahp-Phe-NMePhe-Val_like": {
+        "required": {"res_Gln": 1, "res_Thr": 1, "res_Trp": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1, "res_Val": 1},
+        "any_of": {"BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
+        "diagnostic_msms": "BTA-Gln-Thr-Trp-Ahp-Phe-NMePhe-Val",
+        "interpretation": "Micropeptin 1005-like sequence signature."
+    },
+    "BTA-Gln-Thr-Hphe-Ahp-Phe-NMePhe-Val_like": {
+        "required": {"res_Gln": 1, "res_Thr": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1, "res_Val": 1},
+        "any_of": {"Hphe_like": ["N[C@H](CCC1=CC=CC=C1)C(=O)", "N[C@H](CCCc1ccccc1)C(=O)"],
+                   "BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
+        "diagnostic_msms": "BTA-Gln-Thr-Hphe-Ahp-Phe-NMePhe-Val",
+        "interpretation": "Homologated phenylalanine-containing micropeptin-like signature."
+    },
+    "BTA-Gln-Thr-Hleu_or_Hile-Ahp-Phe-NMePhe-Val_like": {
+        "required": {"res_Gln": 1, "res_Thr": 1, "motif_Ahp_like": 1, "res_Phe": 2, "motif_NMe_amide": 1, "res_Val": 1},
+        "any_of": {"Hleu_or_Hile_like": ["N[C@H](CCC(C)C)C(=O)", "N[C@H](CC(C)CC)C(=O)"],
+                   "BTA_or_short_acyl": ["CCCC(=O)", "CCCC(=O)N"]},
+        "diagnostic_msms": "BTA-Gln-Thr-Hleu/Hile-Ahp-Phe-NMePhe-Val",
+        "interpretation": "Homologated Leu/Ile micropeptin-like signature; Leu/Ile cannot be confidently separated by this heuristic."
+    },
+}
+
 @st.cache_data
 def compile_smarts_dict(smarts_dict):
     if not RDKIT_AVAILABLE:
@@ -189,6 +264,118 @@ def count_substructures(mol, compiled_patterns):
         except Exception:
             counts[name] = 0
     return counts
+
+
+def has_smarts(mol, smarts):
+    """Return True when the molecule matches a SMARTS pattern."""
+    if mol is None or not smarts:
+        return False
+    patt = Chem.MolFromSmarts(smarts)
+    if patt is None:
+        return False
+    return mol.HasSubstructMatch(patt)
+
+
+def detect_micropeptin_signatures(row, signatures):
+    """
+    Detect micropeptin/cyanopeptolin signatures based on required residue/motif
+    columns plus optional SMARTS checks.
+
+    This is not MS/MS ion detection. It is a structural proxy using SMILES/RDKit.
+    """
+    mol = row.get("mol", None)
+    hits = []
+
+    for signature_name, spec in signatures.items():
+        required = spec.get("required", {})
+        ok = True
+
+        for col, min_count in required.items():
+            if int(row.get(col, 0) or 0) < int(min_count):
+                ok = False
+                break
+
+        if not ok:
+            continue
+
+        # any_of groups: at least one SMARTS inside each group must match.
+        any_of = spec.get("any_of", {})
+        for group_name, smarts_list in any_of.items():
+            if not any(has_smarts(mol, smarts) for smarts in smarts_list):
+                ok = False
+                break
+
+        if ok:
+            hits.append(signature_name)
+
+    return hits
+
+
+def micropeptin_signature_table(row, signatures):
+    hits = set(row.get("micropeptin_signature_hits_list", []))
+    data = {}
+    for signature_name in signatures:
+        data[f"sig_{signature_name}"] = int(signature_name in hits)
+    return pd.Series(data)
+
+
+def build_signature_summary(row):
+    hits = row.get("micropeptin_signature_hits_list", [])
+    if not hits:
+        return ""
+    return "; ".join(hits)
+
+
+def collect_highlight_atoms_and_bonds(mol, compiled_patterns, selected_pattern_names):
+    """Collect atoms and bonds from selected SMARTS matches for RDKit highlighting."""
+    atoms = set()
+    bonds = set()
+
+    if mol is None:
+        return [], []
+
+    for name in selected_pattern_names:
+        patt = compiled_patterns.get(name)
+        if patt is None:
+            continue
+
+        for match in mol.GetSubstructMatches(patt):
+            atoms.update(match)
+            for i in range(len(match)):
+                for j in range(i + 1, len(match)):
+                    bond = mol.GetBondBetweenAtoms(int(match[i]), int(match[j]))
+                    if bond is not None:
+                        bonds.add(bond.GetIdx())
+
+    return sorted(atoms), sorted(bonds)
+
+
+def draw_molecule_png(smiles, compiled_patterns, selected_pattern_names, width=900, height=650):
+    """Return PNG bytes of molecule with selected substructures highlighted."""
+    mol = safe_mol_from_smiles(smiles)
+    if mol is None:
+        return None
+
+    rdDepictor.Compute2DCoords(mol)
+    highlight_atoms, highlight_bonds = collect_highlight_atoms_and_bonds(
+        mol, compiled_patterns, selected_pattern_names
+    )
+
+    drawer = rdMolDraw2D.MolDraw2DCairo(width, height)
+    options = drawer.drawOptions()
+    options.addAtomIndices = False
+    options.bondLineWidth = 2
+
+    rdMolDraw2D.PrepareAndDrawMolecule(
+        drawer,
+        mol,
+        highlightAtoms=highlight_atoms,
+        highlightBonds=highlight_bonds,
+    )
+    drawer.FinishDrawing()
+    return drawer.GetDrawingText()
+
+
 
 
 def make_simplified_sequence(row, residue_cols, motif_cols):
@@ -221,8 +408,18 @@ def make_simplified_sequence(row, residue_cols, motif_cols):
 def token_counter(sequence):
     if pd.isna(sequence) or not str(sequence).strip():
         return Counter()
-    left = str(sequence).split("|")[0]
-    tokens = [t.strip() for t in re.split(r"[-; ,]+", left) if t.strip()]
+
+    text = str(sequence).replace("|", ";")
+    raw_tokens = [t.strip() for t in re.split(r"[-; ,]+", text) if t.strip()]
+
+    tokens = []
+    for token in raw_tokens:
+        # Convert motif annotations such as Ahp_like:1 into Ahp_like.
+        if ":" in token:
+            token = token.split(":", 1)[0]
+        if token and token != "Unresolved_peptide":
+            tokens.append(token)
+
     return Counter(tokens)
 
 
@@ -400,14 +597,13 @@ def matrix_to_long_table(sim_matrix, labels, metric_name):
 # =============================================================================
 # Sidebar
 # =============================================================================
-from pathlib import Path
+
 with st.sidebar:
-
-
     LOGO_PATH = Path(__file__).parent / "static" / "LAABio.png"
-
     if LOGO_PATH.exists():
         st.image(str(LOGO_PATH), use_container_width=True)
+    else:
+        st.caption("Logo not found: static/LAABio.png")
 
     st.info("by Ricardo Moreira Borges (IPPN-UFRJ; 06-2026)")
     st.divider()
@@ -518,8 +714,20 @@ for name, patt in residue_patterns.items():
 for name, patt in motif_patterns.items():
     processed[f"motif_{name}"] = processed["mol"].apply(lambda m, p=patt: len(m.GetSubstructMatches(p)) if m is not None else 0)
 
+processed["micropeptin_signature_hits_list"] = processed.apply(
+    lambda row: detect_micropeptin_signatures(row, MICROPEPTIN_SIGNATURES),
+    axis=1
+)
+processed["micropeptin_signature_hits"] = processed.apply(build_signature_summary, axis=1)
+signature_hit_table = processed.apply(
+    lambda row: micropeptin_signature_table(row, MICROPEPTIN_SIGNATURES),
+    axis=1
+)
+processed = pd.concat([processed, signature_hit_table], axis=1)
+
 residue_cols = [c for c in processed.columns if c.startswith("res_")]
 motif_cols = [c for c in processed.columns if c.startswith("motif_")]
+signature_cols = [c for c in processed.columns if c.startswith("sig_")]
 
 processed["detected_residue_count"] = processed[residue_cols].sum(axis=1)
 processed["detected_special_motif_count"] = processed[motif_cols].sum(axis=1)
@@ -542,6 +750,13 @@ processed["simplified_sequence"] = processed.apply(
     lambda row: make_simplified_sequence(row, residue_cols, motif_cols),
     axis=1
 )
+processed["AA_signature"] = processed.apply(
+    lambda row: (
+        row["simplified_sequence"]
+        + (" | Micropeptin_signatures: " + row["micropeptin_signature_hits"] if row["micropeptin_signature_hits"] else "")
+    ).strip(),
+    axis=1
+)
 
 peptides = processed[processed["is_peptide_like"] & processed["valid_smiles"]].copy()
 peptides = peptides.sort_values(["family", "amide_bond_count", "MolWt"], ascending=[True, False, False])
@@ -562,17 +777,118 @@ if len(family_counts):
 
 show_cols = [
     "compound_name", "family", "amide_bond_count", "detected_residue_count",
-    "detected_special_motif_count", "MolWt", "simplified_sequence", "SMILES"
+    "detected_special_motif_count", "micropeptin_signature_hits", "MolWt", "AA_signature", "SMILES"
 ]
 st.dataframe(peptides[show_cols].head(500), use_container_width=True)
 
-csv_processed = peptides.drop(columns=["mol"], errors="ignore").to_csv(index=False).encode("utf-8")
+csv_processed = csv_bytes(peptides.drop(columns=["mol"], errors="ignore"))
 st.download_button(
     "Download peptide-like table with simplified sequences",
     data=csv_processed,
     file_name="cyano_peptide_like_sequences.csv",
     mime="text/csv"
 )
+
+st.subheader("2b. Micropeptin/cyanopeptolin substructure detection")
+st.caption(
+    "These signatures are structural proxies inspired by diagnostic MS/MS fragments. "
+    "They use SMILES/RDKit substructure matching, not direct MS/MS ion detection."
+)
+
+signature_summary_cols = [
+    "compound_name", "family", "micropeptin_signature_hits", "AA_signature", "SMILES"
+] + signature_cols
+
+micro_hits_df = peptides.loc[
+    peptides["micropeptin_signature_hits"].astype(str).str.len() > 0,
+    signature_summary_cols
+].copy()
+
+col_sig1, col_sig2 = st.columns(2)
+col_sig1.metric("Compounds with micropeptin-like signatures", len(micro_hits_df))
+col_sig2.metric("Signature types searched", len(MICROPEPTIN_SIGNATURES))
+
+if len(micro_hits_df):
+    st.dataframe(micro_hits_df, use_container_width=True)
+else:
+    st.info("No micropeptin/cyanopeptolin signatures were detected with the current SMARTS heuristics.")
+
+st.download_button(
+    "Download micropeptin/cyanopeptolin signature hits",
+    data=csv_bytes(micro_hits_df),
+    file_name="micropeptin_cyanopeptolin_signature_hits.csv",
+    mime="text/csv"
+)
+
+with st.expander("Signature dictionary used for detection"):
+    signature_dictionary_df = pd.DataFrame([
+        {
+            "signature": name,
+            "required_columns": "; ".join(f"{k}>={v}" for k, v in spec.get("required", {}).items()),
+            "optional_smarts_groups": "; ".join(spec.get("any_of", {}).keys()),
+            "diagnostic_msms_reference": spec.get("diagnostic_msms", ""),
+            "interpretation": spec.get("interpretation", "")
+        }
+        for name, spec in MICROPEPTIN_SIGNATURES.items()
+    ])
+    st.dataframe(signature_dictionary_df, use_container_width=True)
+    st.download_button(
+        "Download signature dictionary",
+        data=csv_bytes(signature_dictionary_df),
+        file_name="micropeptin_signature_dictionary.csv",
+        mime="text/csv"
+    )
+
+st.subheader("2c. Structure inspector with RDKit highlights")
+if len(peptides):
+    selected_compound = st.selectbox(
+        "Select a compound to inspect",
+        options=peptides["compound_name"].astype(str).tolist(),
+        index=0
+    )
+
+    selected_row = peptides[peptides["compound_name"].astype(str) == selected_compound].iloc[0]
+    selected_mol = selected_row.get("mol", None)
+
+    all_highlight_patterns = {}
+    all_highlight_patterns.update({f"res_{k}": v for k, v in residue_patterns.items()})
+    all_highlight_patterns.update({f"motif_{k}": v for k, v in motif_patterns.items()})
+
+    detected_pattern_names = [
+        name for name in all_highlight_patterns
+        if int(selected_row.get(name, 0) or 0) > 0
+    ]
+
+    selected_patterns = st.multiselect(
+        "Substructures to highlight",
+        options=detected_pattern_names,
+        default=detected_pattern_names[:8]
+    )
+
+    png_bytes = draw_molecule_png(
+        selected_row["SMILES"],
+        all_highlight_patterns,
+        selected_patterns
+    )
+
+    col_struct1, col_struct2 = st.columns([2, 1])
+    with col_struct1:
+        if png_bytes is not None:
+            st.image(png_bytes, caption=selected_compound, use_container_width=True)
+        else:
+            st.warning("Could not render structure.")
+    with col_struct2:
+        st.markdown("**Detected AA/signature**")
+        st.write(selected_row.get("AA_signature", ""))
+        st.markdown("**Micropeptin signatures**")
+        st.write(selected_row.get("micropeptin_signature_hits", "None"))
+        st.download_button(
+            "Download highlighted structure PNG",
+            data=png_bytes if png_bytes is not None else b"",
+            file_name=f"{re.sub(r'[^A-Za-z0-9_.-]+', '_', selected_compound)}_highlighted.png",
+            mime="image/png",
+            disabled=png_bytes is None
+        )
 
 if peptides.empty:
     st.warning("No peptide-like compounds were detected with the current settings.")
@@ -588,7 +904,7 @@ st.caption(
     "Ela não representa necessariamente a ordem biossintética real dos resíduos."
 )
 
-seq_sim = compute_sequence_similarity(plot_df["simplified_sequence"].tolist())
+seq_sim = compute_sequence_similarity(plot_df["AA_signature"].tolist())
 seq_pairs = matrix_to_long_table(seq_sim, labels, "sequence_jaccard")
 
 col1, col2 = st.columns(2)
@@ -608,7 +924,7 @@ with st.expander("Top sequence-like similarities"):
     st.dataframe(seq_pairs.head(200), use_container_width=True)
     st.download_button(
         "Download sequence similarity pairs",
-        data=seq_pairs.to_csv(index=False).encode("utf-8"),
+        data=csv_bytes(seq_pairs),
         file_name="sequence_similarity_pairs.csv",
         mime="text/csv"
     )
@@ -632,7 +948,7 @@ with st.expander("Top structural similarities"):
     st.dataframe(struct_pairs.head(200), use_container_width=True)
     st.download_button(
         "Download Morgan/Tanimoto similarity pairs",
-        data=struct_pairs.to_csv(index=False).encode("utf-8"),
+        data=csv_bytes(struct_pairs),
         file_name="morgan_tanimoto_similarity_pairs.csv",
         mime="text/csv"
     )
@@ -656,7 +972,7 @@ if not comparison.empty:
 
     st.download_button(
         "Download sequence vs structure comparison",
-        data=comparison.to_csv(index=False).encode("utf-8"),
+        data=csv_bytes(comparison),
         file_name="sequence_vs_structure_similarity.csv",
         mime="text/csv"
     )

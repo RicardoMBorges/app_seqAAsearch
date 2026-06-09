@@ -1,72 +1,69 @@
-# Cyano Peptide Clustering
+# NPPSA
+
+## Natural Products Peptide Signature Analysis
+
+A chemoinformatic framework for biosynthetic-oriented clustering, motif discovery and peptide signature mining in cyanobacterial natural products.
+
+---
 
 ## Overview
 
-Cyano Peptide Clustering is a Streamlit application designed for the exploration, annotation and clustering of cyanobacterial peptide natural products using chemical structures (SMILES).
+NPPSA is a Streamlit application designed to analyze peptide natural products directly from molecular structures (SMILES).
 
-The software combines:
+Instead of comparing only whole-molecule similarity, NPPSA transforms molecules into residue-based compositional signatures and explores relationships between compounds from a biosynthetic perspective.
 
-* Peptide-like compound detection
-* Amino acid residue identification
-* Detection of cyanobacterial peptide motifs
-* Detection of micropeptin/cyanopeptolin-inspired structural signatures
-* Sequence-like clustering
-* Structural clustering (Morgan/Tanimoto)
-* Interactive structure inspection with highlighted substructures
+The framework is particularly useful for:
 
-The application is intended for metabolomics, natural products chemistry, cyanobacterial secondary metabolites and dereplication workflows.
-
----
-
-# Input
-
-The application accepts:
-
-* CSV
-* TSV
-* TXT
-
-Files must contain at least:
-
-| Column        | Required |
-| ------------- | -------- |
-| SMILES        | Yes      |
-| compound_name | Optional |
-
-If compound names are absent, the software automatically generates identifiers.
-
----
-
-# What the program does
-
-## 1. Detects peptide-like compounds
-
-The software identifies peptide-like molecules using:
-
-### Amide bond count
-
-A molecule is considered peptide-like if the number of amide bonds exceeds the user-defined threshold.
-
-### Family recognition
-
-Known cyanobacterial peptide families are automatically recognized:
-
+* Micropeptins
+* Cyanopeptolins
+* Aeruginosins
 * Microcystins
 * Nodularins
-* Aeruginosins
-* Cyanopeptolins
-* Micropeptins
 * Anabaenopeptins
-* Hassallidins
 * Microginins
 * Microviridins
-* and others
+
+and other peptide-derived natural products.
 
 ---
 
-## 2. Detects amino acid residues
+## Why NPPSA?
 
-The software searches for peptide-related substructures:
+Traditional cheminformatics asks:
+
+> Which molecules are structurally similar?
+
+NPPSA asks:
+
+> Which molecules share similar biosynthetic modules?
+
+For example:
+
+Ahp–Phe–NMePhe–Val–Thr
+
+Ahp–Tyr–NMePhe–Val–Thr
+
+Ahp–Phe–NMeTyr–Val–Thr
+
+may appear structurally different while sharing nearly identical biosynthetic logic.
+
+---
+
+## Main Features
+
+### 1. Automatic Peptide Detection
+
+The app automatically identifies peptide-like compounds using:
+
+* amide bond counts
+* known cyanobacterial peptide family names
+* residue detection from SMILES
+
+---
+
+### 2. Residue Detection
+
+Detected residues currently include:
 
 * Gly
 * Ala
@@ -86,17 +83,11 @@ The software searches for peptide-related substructures:
 * His
 * Pro
 
-These residues are converted into a simplified residue signature.
-
-Example:
-
-Val-Thr-Phe-Phe
-
 ---
 
-## 3. Detects cyanobacterial peptide motifs
+### 3. Cyanobacterial Motif Detection
 
-The software also searches for:
+Current motifs include:
 
 * Ahp-like
 * Choi-like
@@ -107,262 +98,232 @@ The software also searches for:
 * Halogens
 * Sugar-like motifs
 
-Example:
-
-Val-Thr-Phe-Phe | Ahp_like:1; NMe_amide:1
-
 ---
 
-## 4. Detects micropeptin/cyanopeptolin signatures
+### 4. Cyanopeptide Signature Detection
 
-The software contains a dedicated signature engine inspired by diagnostic MS/MS fragments reported in the literature.
+The app identifies structural signatures inspired by known cyanobacterial peptide families.
 
 Examples:
 
-* Ahp-Phe-NMePhe core
-* Ahp-Phe core
-* BTA-Gln-Thr
-* BTA-Gln-Thr-Val-NMePhe
-* Met-Ahp-Phe
-* Met-Ahp-Phe-NMePhe
+* Ahp-Phe-NMePhe
+* Ahp-Phe
+* Adda-Glu
+* Choi-Arg
+* Lys-containing scaffolds
 
-Important:
-
-These are NOT direct MS/MS detections.
-
-They are structural proxies inferred from SMILES using RDKit.
+These signatures are structural proxies and are not direct MS/MS annotations.
 
 ---
 
-## 5. Generates AA Signatures
+### 5. Structure Inspector
 
-The application combines:
-
-* Residues
-* Cyanobacterial motifs
-* Micropeptin signatures
-
-into a single annotation:
-
-Example:
-
-Val-Thr-Phe-Phe | Ahp_like:1; NMe_amide:1 | Micropeptin_signatures: Ahp-Phe-NMePhe_core_like
-
----
-
-# Structure Inspector
-
-The Structure Inspector allows visual inspection of detected motifs.
+Visual inspection of compounds with RDKit.
 
 Features:
 
-* Structure rendering with RDKit
-* Highlighted residues
-* Highlighted motifs
-* Highlighted micropeptin-related regions
+* structure rendering
+* motif highlighting
+* residue highlighting
 * PNG export
 
-Example interpretation:
+---
 
-A structure displaying:
+### 6. CyanoPeptide Signature Builder
 
-* Ahp_like
-* Phe
-* NMe_amide
+Automatically discovers recurring motifs from the uploaded database.
 
-highlighted simultaneously may support assignment to a micropeptin/cyanopeptolin-like scaffold.
+Example output:
+
+| Signature   | Compounds |
+| ----------- | --------- |
+| Ahp-Phe-NMe | 47        |
+| Adda-Glu    | 39        |
+| Choi-Arg    | 22        |
+| Lys-Val-Phe | 18        |
+
+No manual curation is required.
 
 ---
 
-# Clustering Approaches
+### 7. Sequence Explorer
 
-## Sequence-like clustering
+Search compounds using:
 
-Uses:
-
-AA_signature
-
-and computes:
-
-Multiset Jaccard similarity
-
-Output:
-
-* Heatmap
-* Dendrogram
-* Similarity network
-
-Interpretation:
-
-Compounds clustering together share similar residue composition and peptide motifs.
+* residues
+* motifs
+* cyanopeptide signatures
+* recurring signatures
+* diagnostic MS/MS-inspired motifs
+* compound families
 
 ---
 
-## Structural clustering
+### 8. Sequence-like Clustering
 
-Uses:
+NPPSA converts detected residues and motifs into compositional signatures.
 
-Morgan fingerprints
+Example:
 
-and:
+Val-Thr-Phe-Phe | Ahp | NMe
 
-Tanimoto similarity
+Similarity is calculated using:
 
-Output:
+* multiset Jaccard similarity
 
-* Heatmap
-* Dendrogram
-* Similarity network
+This produces:
 
-Interpretation:
-
-Compounds clustering together share overall structural similarity.
+* heatmaps
+* dendrograms
+* similarity networks
 
 ---
 
-## Sequence vs Structure Comparison
+### 9. Structural Clustering
 
-The software compares:
+Standard cheminformatic clustering using:
 
-Sequence similarity
+* Morgan fingerprints
+* Tanimoto similarity
+
+Outputs:
+
+* heatmaps
+* dendrograms
+* molecular networks
+
+---
+
+### 10. Sequence vs Structure Comparison
+
+NPPSA directly compares:
+
+Residue-based similarity
 
 vs
 
-Structural similarity
+Fingerprint-based similarity
 
-Interpretation:
+allowing identification of compounds that:
 
-### High sequence similarity + high structural similarity
-
-Likely close analogues.
-
-### High sequence similarity + low structural similarity
-
-Similar peptide cores with different decorations.
-
-Examples:
-
-* Glycosylation
-* Halogenation
-* Sulfation
-* Lipid modifications
-
-### Low sequence similarity + high structural similarity
-
-Potential scaffold analogues with different residue composition.
+* share peptide cores
+* differ by decorations
+* may belong to related biosynthetic spaces
 
 ---
 
-# Files Produced
+## Input File
 
-## Peptide detection
+Required column:
 
-cyano_peptide_like_sequences.csv
+| Column |
+| ------ |
+| SMILES |
 
-Contains:
+Optional:
 
-* compound name
-* family
-* amide count
-* detected residues
-* detected motifs
-* AA signatures
+| Column        |
+| ------------- |
+| compound_name |
+| InChI         |
+| InChIKey      |
 
----
-
-## Micropeptin signatures
-
-micropeptin_cyanopeptolin_signature_hits.csv
-
-Contains:
-
-* detected signatures
-* AA signatures
-* family assignments
+CSV, TSV and TXT files are supported.
 
 ---
 
-## Signature dictionary
+## Downloadable Outputs
 
-micropeptin_signature_dictionary.csv
+All exported tables use semicolon-separated CSV format.
 
-Contains:
+Generated files include:
 
-* searched signatures
-* required residues
-* interpretation
-
----
-
-## Sequence clustering
-
-sequence_similarity_pairs.csv
-
-Contains pairwise sequence-like similarity values.
+* cyano_peptide_like_sequences.csv
+* auto_built_cyanopeptide_signatures.csv
+* sequence_explorer_results.csv
+* sequence_similarity_pairs.csv
+* morgan_tanimoto_similarity_pairs.csv
+* sequence_vs_structure_similarity.csv
 
 ---
 
-## Structural clustering
+## Example Workflow
 
-morgan_tanimoto_similarity_pairs.csv
-
-Contains pairwise structural similarity values.
-
----
-
-## Sequence vs Structure
-
-sequence_vs_structure_similarity.csv
-
-Contains combined similarity metrics.
+1. Upload a metabolite database.
+2. Detect peptide-like compounds.
+3. Inspect residue signatures.
+4. Explore recurring motifs.
+5. Search for specific peptide signatures.
+6. Build sequence-like clustering.
+7. Build structural clustering.
+8. Compare both clustering approaches.
 
 ---
 
-# Example Interpretation
+## Scientific Applications
 
-Suppose a compound displays:
+NPPSA can be used for:
 
-Ahp-Phe-NMePhe_core_like
-
-and clusters with known micropeptins.
-
-Interpretation:
-
-The compound likely contains the characteristic Ahp-containing core typical of micropeptins/cyanopeptolins.
-
----
-
-Suppose a compound shows:
-
-High Morgan similarity
-Low sequence similarity
-
-Interpretation:
-
-The molecule may be a structural analogue with substantial residue substitutions.
+* natural product dereplication
+* cyanobacterial metabolomics
+* chemotaxonomy
+* biosynthetic studies
+* genome–metabolome integration
+* peptide family discovery
+* NRPS module exploration
+* natural product evolution studies
 
 ---
 
-Suppose a compound shows:
+## Technology Stack
 
-High sequence similarity
-Low Morgan similarity
-
-Interpretation:
-
-The peptide core is conserved but decorations differ significantly.
-
-Examples:
-
-* glycosylation
-* halogenation
-* sulfation
-* lipid tails
+* Python
+* Streamlit
+* RDKit
+* Plotly
+* SciPy
+* NetworkX
+* Pandas
+* NumPy
 
 ---
 
-# Disclaimer
+## Citation
 
-This software does NOT reconstruct the true biosynthetic peptide sequence.
+If you use NPPSA in your research, please cite:
 
-The generated sequence is a residue signature inferred from SMILES substructure matching and should be interpreted as a comparative chemoinformatic descriptor rather than a true peptide sequence.
+Borges RM et al.
+Natural Products Peptide Signature Analysis (NPPSA):
+A Chemoinformatic Framework for Biosynthetic-Oriented Clustering and Motif Discovery in Cyanobacterial Peptides.
+
+Manuscript in preparation.
+
+---
+
+## Author
+
+Ricardo Moreira Borges
+
+Walter Mors Institute of Research on Natural Products (IPPN)
+
+Federal University of Rio de Janeiro (UFRJ)
+
+Brazil
+
+ORCID: 0000-0002-7662-6734
+
+---
+
+## Future Developments
+
+Planned features include:
+
+* true peptide sequence reconstruction
+* automatic motif mining
+* BGC integration
+* antiSMASH integration
+* GNPS integration
+* CyanoMetDB integration
+* NPAtlas integration
+* machine-learning-based signature discovery
+* biosynthetic module prediction

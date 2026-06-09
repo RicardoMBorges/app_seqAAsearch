@@ -1223,7 +1223,7 @@ else:
 
 
 ######## 
-st.subheader("2d. Sequence Explorer")
+st.subheader("2e. Sequence Explorer")
 st.caption(
     "Explore compounds using residues, motifs, micropeptin signatures, "
     "diagnostic MS/MS-inspired fragments or compound families already detected by the app."

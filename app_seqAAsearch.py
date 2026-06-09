@@ -1045,6 +1045,183 @@ if peptides.empty:
 plot_df = peptides.head(max_items).copy()
 labels = plot_df["compound_name"].astype(str).tolist()
 
+
+# =============================================================================
+# CyanoPeptide Signature Builder
+# =============================================================================
+
+TOKEN_LABEL_MAP = {
+    "Ahp_like": "Ahp",
+    "Choi_like": "Choi",
+    "Adda_like": "Adda",
+    "NMe_amide": "NMe",
+    "Sugar_like": "Sugar",
+    "Halogenated": "Halogen",
+    "Sulfate": "Sulfate",
+    "Guanidino": "Guanidino",
+}
+
+
+def extract_detected_tokens_from_row(row, residue_cols, motif_cols):
+    """
+    Extract a compact token set from residue/motif columns.
+    These tokens are used to build recurring signatures automatically.
+
+    Important:
+    - This does not infer true residue order.
+    - It creates compositional motifs such as Ahp-Phe-NMe.
+    """
+    tokens = []
+
+    for col in residue_cols:
+        count = int(row.get(col, 0) or 0)
+        if count > 0:
+            token = col.replace("res_", "")
+            tokens.append(token)
+            if count > 1:
+                tokens.append(f"{token}x{count}")
+
+    for col in motif_cols:
+        count = int(row.get(col, 0) or 0)
+        if count > 0:
+            motif = col.replace("motif_", "")
+            token = TOKEN_LABEL_MAP.get(motif, motif)
+            tokens.append(token)
+            if count > 1:
+                tokens.append(f"{token}x{count}")
+
+    return sorted(set(tokens))
+
+
+def build_recurring_signature_table(peptides_df, residue_cols, motif_cols, motif_sizes=(2, 3), min_support=3):
+    """
+    Build recurring compositional signatures from the loaded database.
+
+    Each signature is a combination of detected residue/motif tokens.
+    Example: Ahp-Phe-NMe, Adda-Glu, Choi-Arg.
+    """
+    rows = []
+    motif_to_indices = {}
+
+    token_series = peptides_df.apply(
+        lambda row: extract_detected_tokens_from_row(row, residue_cols, motif_cols),
+        axis=1
+    )
+
+    for idx, tokens in token_series.items():
+        tokens = [t for t in tokens if t]
+        for size in motif_sizes:
+            if len(tokens) < size:
+                continue
+            for combo in itertools.combinations(tokens, size):
+                motif_to_indices.setdefault(combo, []).append(idx)
+
+    for combo, indices in motif_to_indices.items():
+        unique_indices = list(dict.fromkeys(indices))
+        if len(unique_indices) < min_support:
+            continue
+
+        sub = peptides_df.loc[unique_indices]
+        families = (
+            sub["family"]
+            .dropna()
+            .astype(str)
+            .value_counts()
+            .head(5)
+            .to_dict()
+        )
+
+        rows.append({
+            "auto_signature": "-".join(combo),
+            "size": len(combo),
+            "count": len(unique_indices),
+            "families": "; ".join([f"{k}:{v}" for k, v in families.items()]),
+            "compounds_preview": "; ".join(sub["compound_name"].astype(str).head(8).tolist()),
+            "tokens": list(combo),
+        })
+
+    if not rows:
+        return pd.DataFrame(columns=[
+            "auto_signature", "size", "count", "families", "compounds_preview", "tokens"
+        ])
+
+    out = pd.DataFrame(rows)
+    out = out.sort_values(["count", "size", "auto_signature"], ascending=[False, True, True])
+    return out.reset_index(drop=True)
+
+
+def filter_by_auto_signature(peptides_df, selected_tokens, residue_cols, motif_cols):
+    """Return rows containing all selected auto-signature tokens."""
+    if not selected_tokens:
+        return peptides_df.iloc[0:0].copy()
+
+    row_tokens = peptides_df.apply(
+        lambda row: set(extract_detected_tokens_from_row(row, residue_cols, motif_cols)),
+        axis=1
+    )
+
+    selected_tokens = set(selected_tokens)
+    mask = row_tokens.apply(lambda tokens: selected_tokens.issubset(tokens))
+    return peptides_df.loc[mask].copy()
+
+
+st.subheader("2d. CyanoPeptide Signature Builder")
+st.caption(
+    "Automatically discovers the most frequent compositional residue/motif signatures "
+    "from the uploaded database. These are data-driven signatures, not manually coded rules."
+)
+
+builder_col1, builder_col2, builder_col3 = st.columns(3)
+
+with builder_col1:
+    auto_motif_sizes = st.multiselect(
+        "Motif size",
+        options=[2, 3, 4],
+        default=[2, 3]
+    )
+
+with builder_col2:
+    auto_min_support = st.slider(
+        "Minimum number of compounds",
+        min_value=2,
+        max_value=50,
+        value=3,
+        step=1
+    )
+
+with builder_col3:
+    auto_top_n = st.slider(
+        "Maximum signatures to show",
+        min_value=20,
+        max_value=500,
+        value=100,
+        step=20
+    )
+
+auto_signature_df = build_recurring_signature_table(
+    peptides,
+    residue_cols,
+    motif_cols,
+    motif_sizes=tuple(auto_motif_sizes) if auto_motif_sizes else (2, 3),
+    min_support=auto_min_support
+)
+
+if len(auto_signature_df):
+    st.dataframe(
+        auto_signature_df.drop(columns=["tokens"]).head(auto_top_n),
+        use_container_width=True
+    )
+
+    st.download_button(
+        "Download auto-built recurring signatures",
+        data=csv_bytes(auto_signature_df.drop(columns=["tokens"])),
+        file_name="auto_built_cyanopeptide_signatures.csv",
+        mime="text/csv"
+    )
+else:
+    st.info("No recurring signatures were found with the current settings.")
+
+
 ######## 
 st.subheader("2d. Sequence Explorer")
 st.caption(
@@ -1057,6 +1234,7 @@ search_mode = st.radio(
     [
         "Residues / motifs",
         "Cyanopeptide signature",
+        "Auto-built recurring signature",
         "Diagnostic MS/MS fragment",
         "Family"
     ],
@@ -1151,6 +1329,57 @@ elif search_mode == "Cyanopeptide signature":
             mask &= peptides[f"sig_{signature}"] > 0
 
         hits = peptides.loc[mask, result_cols].copy()
+
+
+# ==========================================================
+# AUTO-BUILT RECURRING SIGNATURE SEARCH
+# ==========================================================
+
+elif search_mode == "Auto-built recurring signature":
+
+    if len(auto_signature_df):
+
+        auto_options = (
+            auto_signature_df
+            .head(auto_top_n)
+            .assign(label=lambda x: x["auto_signature"] + "  (" + x["count"].astype(str) + " compounds)")
+        )
+
+        selected_auto_labels = st.multiselect(
+            "Select auto-built recurring signatures",
+            auto_options["label"].tolist(),
+            default=[]
+        )
+
+        if selected_auto_labels:
+
+            selected_auto_signatures = auto_options.loc[
+                auto_options["label"].isin(selected_auto_labels),
+                ["auto_signature", "tokens"]
+            ]
+
+            # AND logic across selected signatures:
+            # a compound must contain all tokens from all selected signatures.
+            selected_tokens = sorted(set(
+                token
+                for token_list in selected_auto_signatures["tokens"]
+                for token in token_list
+            ))
+
+            hits = filter_by_auto_signature(
+                peptides,
+                selected_tokens,
+                residue_cols,
+                motif_cols
+            )[result_cols].copy()
+
+            st.caption(
+                "Selected token set: " + " + ".join(selected_tokens)
+            )
+
+    else:
+        st.info("No auto-built signatures are available with the current settings.")
+
 
 # ==========================================================
 # DIAGNOSTIC FRAGMENT SEARCH

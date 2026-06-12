@@ -717,6 +717,12 @@ with st.sidebar:
     else:
         st.caption("Logo not found: static/LAABio.png")
 
+    LOGO_PATH2 = Path(__file__).parent / "static" / "NPPSA.png"
+    if LOGO_PATH2.exists():
+        st.image(str(LOGO_PATH2), use_container_width=True)
+    else:
+        st.caption("Logo not found: static/NPPSA.png")
+
     st.info("by Ricardo Moreira Borges (IPPN-UFRJ; 06-2026)")
     
     st.link_button(

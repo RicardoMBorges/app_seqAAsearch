@@ -1,218 +1,295 @@
-# NPPSA
 
-## Natural Products Peptide Signature Analysis
+# NPSAA
 
-A chemoinformatic framework for biosynthetic-oriented clustering, motif discovery and peptide signature mining in cyanobacterial natural products.
+## Natural Products Scaffold and Amino Acid Analysis
+
+A biosynthetic-oriented chemoinformatic framework for scaffold classification, motif discovery, architecture mining, and similarity analysis of peptide natural products.
 
 ---
 
 ## Overview
 
-NPPSA is a Streamlit application designed to analyze peptide natural products directly from molecular structures (SMILES).
+NPSAA is a Streamlit application designed to analyze peptide and peptide-derived natural products directly from molecular structures (SMILES).
 
-Instead of comparing only whole-molecule similarity, NPPSA transforms molecules into residue-based compositional signatures and explores relationships between compounds from a biosynthetic perspective.
+Unlike traditional cheminformatics approaches that rely exclusively on molecular fingerprints, NPSAA attempts to reconstruct biosynthetic relationships through:
 
-The framework is particularly useful for:
+* Biosynthetic scaffold recognition
+* Canonical motif identification
+* Peptide module discovery
+* Natural product ontology assignment
+* NPSAA signature generation
+* Structural similarity analysis
 
-* Micropeptins
-* Cyanopeptolins
-* Aeruginosins
-* Microcystins
-* Nodularins
-* Anabaenopeptins
-* Microginins
-* Microviridins
-
-and other peptide-derived natural products.
+The framework is particularly focused on cyanobacterial peptides, but can be applied to peptide natural products from any biological source.
 
 ---
 
-## Why NPPSA?
+## Conceptual Framework
 
 Traditional cheminformatics asks:
 
 > Which molecules are structurally similar?
 
-NPPSA asks:
+NPSAA asks:
 
-> Which molecules share similar biosynthetic modules?
+> Which molecules belong to the same biosynthetic space?
 
-For example:
+The current version prioritizes:
 
-Ahp–Phe–NMePhe–Val–Thr
+```text
+BIOSYNTHETIC_CLASS
+        ↓
+SCAFFOLD_CLASS
+        ↓
+CANONICAL_MOTIF
+        ↓
+NPSAA_SIGNATURE
+        ↓
+STRUCTURAL SIMILARITY
+```
 
-Ahp–Tyr–NMePhe–Val–Thr
-
-Ahp–Phe–NMeTyr–Val–Thr
-
-may appear structurally different while sharing nearly identical biosynthetic logic.
-
----
-
-## Main Features
-
-### 1. Automatic Peptide Detection
-
-The app automatically identifies peptide-like compounds using:
-
-* amide bond counts
-* known cyanobacterial peptide family names
-* residue detection from SMILES
+This hierarchy reflects biosynthetic logic more closely than residue-only similarity approaches.
 
 ---
 
-### 2. Residue Detection
+# Main Features
 
-Detected residues currently include:
+## 1. Automatic Peptide Detection
 
-* Gly
-* Ala
-* Val
-* Leu/Ile
-* Ser
-* Thr
-* Phe
-* Tyr
-* Trp
-* Asp
-* Glu
-* Asn
-* Gln
-* Lys
-* Arg
-* His
-* Pro
+Peptide-like compounds are automatically detected using:
+
+* Amide bond counts
+* Known peptide family names
+* Structural motif recognition
+* Biosynthetic scaffold assignment
 
 ---
 
-### 3. Cyanobacterial Motif Detection
+## 2. Biosynthetic Ontology Assignment
 
-Current motifs include:
-
-* Ahp-like
-* Choi-like
-* Adda-like
-* N-methyl amides
-* Guanidino groups
-* Sulfates
-* Halogens
-* Sugar-like motifs
-
----
-
-### 4. Cyanopeptide Signature Detection
-
-The app identifies structural signatures inspired by known cyanobacterial peptide families.
+Each compound is classified into biosynthetic categories.
 
 Examples:
 
-* Ahp-Phe-NMePhe
-* Ahp-Phe
-* Adda-Glu
-* Choi-Arg
-* Lys-containing scaffolds
+* Microcystin-like
+* Cyanopeptolin-like
+* Aeruginosin-like
+* Anabaenopeptin-like
+* Microginin-like
+* Cyclamide-like
+* Microviridin-like
+* Laxaphycin-like
+* Hassallidin-like
+* PKS-NRPS hybrid lipopeptides
 
-These signatures are structural proxies and are not direct MS/MS annotations.
+Generated fields:
 
----
-
-### 5. Structure Inspector
-
-Visual inspection of compounds with RDKit.
-
-Features:
-
-* structure rendering
-* motif highlighting
-* residue highlighting
-* PNG export
-
----
-
-### 6. CyanoPeptide Signature Builder
-
-Automatically discovers recurring motifs from the uploaded database.
-
-Example output:
-
-| Signature   | Compounds |
-| ----------- | --------- |
-| Ahp-Phe-NMe | 47        |
-| Adda-Glu    | 39        |
-| Choi-Arg    | 22        |
-| Lys-Val-Phe | 18        |
-
-No manual curation is required.
+| Field                  |
+| ---------------------- |
+| BIOSYNTHETIC_CLASS     |
+| SCAFFOLD_CLASS         |
+| CANONICAL_MOTIF        |
+| NPSAA_CONFIDENCE_LEVEL |
 
 ---
 
-### 7. Sequence Explorer
+## 3. Canonical Motif Recognition
 
-Search compounds using:
+The system recognizes diagnostic biosynthetic motifs.
 
-* residues
-* motifs
-* cyanopeptide signatures
-* recurring signatures
-* diagnostic MS/MS-inspired motifs
-* compound families
+Examples:
+
+* Ahp
+* Adda
+* Choi
+* Ureido linkage
+* N-methyl amino acids
+* Guanidino groups
+* Sulfates
+* Halogens
+* Glycosylations
+* Lipid tails
 
 ---
 
-### 8. Sequence-like Clustering
+## 4. NPSAA Signature Generation
 
-NPPSA converts detected residues and motifs into compositional signatures.
+Each compound receives a biosynthetic signature.
 
 Example:
 
-Val-Thr-Phe-Phe | Ahp | NMe
+```text
+MICROCYSTIN | Adda-Glu-Mdha
+```
 
-Similarity is calculated using:
+or
 
-* multiset Jaccard similarity
+```text
+CYANOPEPTOLIN | Ahp-Phe-NMePhe
+```
 
-This produces:
-
-* heatmaps
-* dendrograms
-* similarity networks
+These signatures are used for clustering and similarity analysis.
 
 ---
 
-### 9. Structural Clustering
+## 5. Cyanopeptide Signature Discovery
 
-Standard cheminformatic clustering using:
+NPSAA automatically discovers recurrent motif combinations in the uploaded database.
+
+Example:
+
+| Signature      | Count |
+| -------------- | ----: |
+| Ahp-Phe-NMePhe |    47 |
+| Adda-Glu-Mdha  |    39 |
+| Choi-Arg       |    22 |
+| Ahp-Tyr-NMePhe |    18 |
+
+---
+
+## 6. Biosynthetic Architecture Analysis
+
+The application reconstructs biosynthetic architectures from detected motifs.
+
+Examples:
+
+```text
+PKS → NRPS → NRPS → Tailoring
+```
+
+```text
+RiPP → Cyclization → Prenylation
+```
+
+```text
+NRPS → Ahp Core → N-Methylation
+```
+
+Outputs include:
+
+* Architecture tables
+* Architecture summaries
+* Architecture networks
+
+---
+
+## 7. Sequence Explorer
+
+Compounds can be searched using:
+
+* Biosynthetic classes
+* Canonical motifs
+* NPSAA signatures
+* Structural families
+* Cyanopeptide families
+* Architecture types
+
+---
+
+## 8. NPSAA Signature Clustering
+
+The primary clustering strategy uses biosynthetic signatures rather than residue composition.
+
+Similarity is calculated using:
+
+* Jaccard similarity
+* Scaffold overlap
+* Motif overlap
+
+Outputs:
+
+* Heatmaps
+* Dendrograms
+* Networks
+
+---
+
+## 9. Structural Clustering
+
+Classical cheminformatics clustering based on:
 
 * Morgan fingerprints
 * Tanimoto similarity
 
 Outputs:
 
-* heatmaps
-* dendrograms
-* molecular networks
+* Structural heatmaps
+* Structural dendrograms
+* Molecular similarity networks
 
 ---
 
-### 10. Sequence vs Structure Comparison
+## 10. Sequence vs Structure Comparison
 
-NPPSA directly compares:
+NPSAA compares:
 
-Residue-based similarity
+```text
+Biosynthetic Similarity
+```
 
-vs
+versus
 
-Fingerprint-based similarity
+```text
+Structural Similarity
+```
 
-allowing identification of compounds that:
+allowing identification of:
 
-* share peptide cores
-* differ by decorations
-* may belong to related biosynthetic spaces
+* Shared biosynthetic origins
+* Divergent chemical decorations
+* Scaffold conservation
+* Analog series
 
 ---
 
-## Input File
+# Confidence Levels
+
+Each classification receives a confidence score.
+
+| Level | Description                         |
+| ----- | ----------------------------------- |
+| A     | Scaffold + canonical motif evidence |
+| B     | Scaffold/core evidence              |
+| C     | Name-supported assignment           |
+| D     | Unresolved                          |
+
+---
+
+# Current Performance (v21)
+
+## Benchmark Dataset
+
+| Metric                   | Value |
+| ------------------------ | ----: |
+| Total compounds analyzed |  1825 |
+| Classified compounds     |   941 |
+| Unresolved compounds     |   884 |
+| Classification coverage  | 51.6% |
+
+Compared with previous versions, unresolved compounds decreased from:
+
+```text
+930 → 884
+```
+
+representing 46 additional compounds successfully classified.
+
+---
+
+## Newly Recognized Superfamilies
+
+The current ontology recognizes:
+
+* Cyclamide RiPPs
+* Microviridins
+* Laxaphycins
+* Hassallidins
+* Marine PKS-NRPS lipopeptides
+* NPSAA-rich depsipeptides
+
+---
+
+# Input File
 
 Required column:
 
@@ -228,83 +305,91 @@ Optional:
 | InChI         |
 | InChIKey      |
 
-CSV, TSV and TXT files are supported.
+Supported formats:
+
+* CSV
+* TSV
+* TXT
 
 ---
 
-## Downloadable Outputs
+# Downloadable Outputs
 
-All exported tables use semicolon-separated CSV format.
+Current exports include:
 
-Generated files include:
+```text
+01_peptide_like_sequences.csv
+02_cyanopeptide_signature_hits.csv
+03_signature_dictionary.csv
+04_auto_built_cyanopeptide_signatures.csv
+05_module_summary.csv
+06_module_architecture_table.csv
+07_compound_module_table.csv
+08_module_network_edges.csv
+09_npsaa_scaffold_ontology.csv
+10_npsaa_canonical_motif_library.csv
+11_npsaa_scaffold_summary.csv
+12_npsaa_scaffold_network_edges.csv
+13_npsaa_canonical_motif_summary.csv
+14_npsaa_canonical_motif_network_edges.csv
+15_biosynthetic_architecture_table.csv
+16_biosynthetic_architecture_summary.csv
+17_biosynthetic_architecture_network_edges.csv
+18_sequence_explorer_results.csv
+19_npsaa_signature_similarity_pairs.csv
+20_morgan_tanimoto_similarity_pairs.csv
+21_npsaa_signature_vs_structure_similarity.csv
+```
 
-* cyano_peptide_like_sequences.csv
-* auto_built_cyanopeptide_signatures.csv
-* sequence_explorer_results.csv
-* sequence_similarity_pairs.csv
-* morgan_tanimoto_similarity_pairs.csv
-* sequence_vs_structure_similarity.csv
-
----
-
-## Example Workflow
-
-1. Upload a metabolite database.
-2. Detect peptide-like compounds.
-3. Inspect residue signatures.
-4. Explore recurring motifs.
-5. Search for specific peptide signatures.
-6. Build sequence-like clustering.
-7. Build structural clustering.
-8. Compare both clustering approaches.
-
----
-
-## Scientific Applications
-
-NPPSA can be used for:
-
-* natural product dereplication
-* cyanobacterial metabolomics
-* chemotaxonomy
-* biosynthetic studies
-* genome–metabolome integration
-* peptide family discovery
-* NRPS module exploration
-* natural product evolution studies
+All CSV exports use semicolon separators.
 
 ---
 
-## Technology Stack
+# Scientific Applications
+
+NPSAA can be applied to:
+
+* Natural product dereplication
+* Cyanobacterial metabolomics
+* Chemotaxonomy
+* Peptide family discovery
+* Biosynthetic investigations
+* NRPS studies
+* RiPP studies
+* Genome-metabolome integration
+* Evolutionary studies
+* Molecular networking interpretation
+
+---
+
+# Technology Stack
 
 * Python
 * Streamlit
 * RDKit
 * Plotly
 * SciPy
-* NetworkX
 * Pandas
 * NumPy
+* NetworkX
 
 ---
 
-## Citation
+# Citation
 
-If you use NPPSA in your research, please cite:
+If you use NPSAA in your research, please cite:
 
-Borges RM et al.
-Natural Products Peptide Signature Analysis (NPPSA):
-A Chemoinformatic Framework for Biosynthetic-Oriented Clustering and Motif Discovery in Cyanobacterial Peptides.
-
-Manuscript in preparation.
+> Borges RM et al.
+> Natural Products Scaffold and Amino Acid Analysis (NPSAA): A Biosynthetic-Oriented Framework for Scaffold Classification, Motif Discovery and Similarity Analysis in Peptide Natural Products.
+> Manuscript in preparation.
 
 ---
 
-## Author
+# Author
 
-Ricardo Moreira Borges
+**Ricardo Moreira Borges**
 
-Walter Mors Institute of Research on Natural Products (IPPN)
+Institute of Research on Natural Products Walter Mors (IPPN)
 
 Federal University of Rio de Janeiro (UFRJ)
 
@@ -314,16 +399,22 @@ ORCID: 0000-0002-7662-6734
 
 ---
 
-## Future Developments
+# Future Developments
 
-Planned features include:
+Planned developments include:
 
-* true peptide sequence reconstruction
-* automatic motif mining
+* Expanded scaffold ontology
+* Additional cyanobacterial peptide families
 * BGC integration
 * antiSMASH integration
 * GNPS integration
 * CyanoMetDB integration
 * NPAtlas integration
-* machine-learning-based signature discovery
-* biosynthetic module prediction
+* Biosynthetic module prediction
+* Machine-learning-assisted motif discovery
+* Automated scaffold inference
+* Cross-linking with metabolomics and genomics datasets
+
+---
+
+Esse README agora está alinhado com a versão atual do aplicativo, incluindo as novas tabelas exportadas, ontologia biossintética, NPSAA signatures e a mudança de paradigma de "AA signatures" para "scaffold-first biosynthetic classification".
